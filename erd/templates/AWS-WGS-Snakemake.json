@@ -20,10 +20,9 @@
             "Default": "10.0.1.0/24",
             "Description": "CIDR Block for Subnet B"
         },
-        "LatestAmiId":{
+        "LatestAmiId": {
             "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
             "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
-
         },
         "SSHLocation": {
             "Description": "The IP address range that can be used to SSH to the EC2 instances",
@@ -204,7 +203,37 @@
                     "FARGATE",
                     "FARGATE_SPOT"
                 ],
-                "ClusterName": "wgs-pipeline-cluster",
+                "ClusterName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "wgs-pipeline-cluster",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "ClusterSettings": [
                     {
                         "Name": "containerInsights",
@@ -217,7 +246,7 @@
                     }
                 },
                 "ServiceConnectDefaults": {
-                    "Namespace": "wgs-pipeline--cluster"
+                    "Namespace": "wgs-pipeline-cluster"
                 },
                 "Tags": [
                     {
@@ -268,7 +297,37 @@
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "Description": "This role is assumed by a Lambda function allows for tasks execution ",
-                "RoleName": "wgs-pipeline-lambda-role",
+                "RoleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "wgs-pipeline-lambda-role",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -290,7 +349,37 @@
         "LambdaStatesPolicy": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName": "LambdaStatesPolicy",
+                "PolicyName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "LambdaStatesPolicy",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "PolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -370,7 +459,37 @@
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "Description": "This role is assumed by an ECS task allows for tasks execution, a S3 bucket, and other resources accessed by the tibanna services  like cloudwatch, dynamodb, lambda and ECS ",
-                "RoleName": "wgs-pipeline-role",
+                "RoleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "wgs-pipeline-role",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -392,7 +511,37 @@
         "TibannaCW": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName": "WGSTibannaCW",
+                "PolicyName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "WGSTibannaCW",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "PolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -417,7 +566,37 @@
         "TibannaLambda": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName": "WGSTibannaLambda",
+                "PolicyName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "WGSTibannaLambda",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "PolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -426,7 +605,8 @@
                             "Action": [
                                 "logs:CreateLogGroup",
                                 "logs:CreateLogStream",
-                                "logs:PutLogEvents"
+                                "logs:PutLogEvents",
+                                "states:ListExecutions"
                             ],
                             "Resource": [
                                 {
@@ -441,7 +621,38 @@
                                             {
                                                 "Ref": "AWS::AccountId"
                                             },
-                                            ":function/run_task_awsem_tibanna_wgs-pipeline"
+                                            ":function:",
+                                            {
+                                                "Fn::Join": [
+                                                    "-",
+                                                    [
+                                                        "run_task_awsem_wgs-pipeline",
+                                                        {
+                                                            "Fn::Select": [
+                                                                0,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "-",
+                                                                        {
+                                                                            "Fn::Select": [
+                                                                                2,
+                                                                                {
+                                                                                    "Fn::Split": [
+                                                                                        "/",
+                                                                                        {
+                                                                                            "Ref": "AWS::StackId"
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                ]
+                                            }
                                         ]
                                     ]
                                 },
@@ -457,7 +668,38 @@
                                             {
                                                 "Ref": "AWS::AccountId"
                                             },
-                                            ":function/check_task_awsem_tibanna_wgs-pipeline"
+                                            ":function:",
+                                            {
+                                                "Fn::Join": [
+                                                    "-",
+                                                    [
+                                                        "check_task_awsem_wgs-pipeline",
+                                                        {
+                                                            "Fn::Select": [
+                                                                0,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "-",
+                                                                        {
+                                                                            "Fn::Select": [
+                                                                                2,
+                                                                                {
+                                                                                    "Fn::Split": [
+                                                                                        "/",
+                                                                                        {
+                                                                                            "Ref": "AWS::StackId"
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                ]
+                                            }
                                         ]
                                     ]
                                 },
@@ -473,7 +715,7 @@
                                             {
                                                 "Ref": "AWS::AccountId"
                                             },
-                                            ":function/update_cost_awsem_tibanna_wgs-pipeline"
+                                            ":function:update_cost_awsem_tibanna_wgs-pipeline"
                                         ]
                                     ]
                                 }
@@ -491,7 +733,37 @@
         "TibannaDynamoDB": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName": "WGSTibannaDynamoDB",
+                "PolicyName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "WGSTibannaDynamoDB",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "PolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -532,7 +804,37 @@
         "TibannaECRTasks": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName": "WGSTibannaECRTasks",
+                "PolicyName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "WGSTibannaECRTasks",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "PolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -560,7 +862,37 @@
         "TibannaStateExecutions": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName": "WGSTibannaStateExecutions",
+                "PolicyName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "WGSTibannaStateExecutions",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "PolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -588,7 +920,38 @@
                                             {
                                                 "Ref": "AWS::AccountId"
                                             },
-                                            ":stateMachine:tibanna_unicorn_wgs-pipeline"
+                                            ":stateMachine:",
+                                            {
+                                                "Fn::Join": [
+                                                    "-",
+                                                    [
+                                                        "tibanna_unicorn_wgs-pipeline",
+                                                        {
+                                                            "Fn::Select": [
+                                                                0,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "-",
+                                                                        {
+                                                                            "Fn::Select": [
+                                                                                2,
+                                                                                {
+                                                                                    "Fn::Split": [
+                                                                                        "/",
+                                                                                        {
+                                                                                            "Ref": "AWS::StackId"
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                ]
+                                            }
                                         ]
                                     ]
                                 },
@@ -620,7 +983,39 @@
                                             {
                                                 "Ref": "AWS::AccountId"
                                             },
-                                            ":execution:tibanna_unicorn_wgs-pipeline:*"
+                                            ":execution:",
+                                            {
+                                                "Fn::Join": [
+                                                    "-",
+                                                    [
+                                                        "tibanna_unicorn_wgs-pipeline",
+                                                        {
+                                                            "Fn::Select": [
+                                                                0,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "-",
+                                                                        {
+                                                                            "Fn::Select": [
+                                                                                2,
+                                                                                {
+                                                                                    "Fn::Split": [
+                                                                                        "/",
+                                                                                        {
+                                                                                            "Ref": "AWS::StackId"
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                ]
+                                            },
+                                            ":*"
                                         ]
                                     ]
                                 },
@@ -645,7 +1040,10 @@
                         {
                             "Sid": "VisualEditor1",
                             "Effect": "Allow",
-                            "Action": "states:ListStateMachines",
+                            "Action": [
+                                "states:ListStateMachines",
+                                "states:ListExecutions"
+                            ],
                             "Resource": "*"
                         }
                     ]
@@ -660,7 +1058,37 @@
         "TibannaS3": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName": "WGSTibannaS3",
+                "PolicyName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "WGSTibannaS3",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "PolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -741,7 +1169,7 @@
                         ]
                     ]
                 },
-                "Description": "Codebuild project to push snakemake image to ecr and deploy tibanna",
+                "Description": "Codebuild project to deploy tibanna",
                 "Environment": {
                     "ComputeType": "BUILD_GENERAL1_SMALL",
                     "EnvironmentVariables": [
@@ -759,13 +1187,7 @@
                         },
                         {
                             "Name": "AWS_ECR_REPOSITORY_URI",
-                            "Value": {
-                                "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepository}"
-                            }
-                        },
-                        {
-                            "Name": "IMAGE_REPO_NAME",
-                            "Value": "biolabs/snakemake"
+                            "Value": "public.ecr.aws/v0f9o4u7/hesct:latest"
                         },
                         {
                             "Name": "IMAGE_TAG",
@@ -775,6 +1197,114 @@
                             "Name": "WGS_BUCKET",
                             "Value": {
                                 "Ref": "WGSBucket"
+                            }
+                        },
+                        {
+                            "Name": "TIBANNA_EXECUTION_POLICY",
+                            "Value": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "arn:aws:iam::",
+                                        {
+                                            "Ref": "AWS::AccountId"
+                                        },
+                                        ":policy/tibanna_wgs-pipeline-",
+                                        {
+                                            "Fn::Select": [
+                                                0,
+                                                {
+                                                    "Fn::Split": [
+                                                        "-",
+                                                        {
+                                                            "Fn::Select": [
+                                                                2,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "/",
+                                                                        {
+                                                                            "Ref": "AWS::StackId"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "_executions"
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Name": "TIBANNA_CHECK_TASK_ROLENAME",
+                            "Value": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "tibanna_wgs-pipeline-",
+                                        {
+                                            "Fn::Select": [
+                                                0,
+                                                {
+                                                    "Fn::Split": [
+                                                        "-",
+                                                        {
+                                                            "Fn::Select": [
+                                                                2,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "/",
+                                                                        {
+                                                                            "Ref": "AWS::StackId"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "_check_task_awsem"
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Name": "TIBANNA_USERGROUP",
+                            "Value": {
+                                "Fn::Join": [
+                                    "-",
+                                    [
+                                        "wgs-pipeline",
+                                        {
+                                            "Fn::Select": [
+                                                0,
+                                                {
+                                                    "Fn::Split": [
+                                                        "-",
+                                                        {
+                                                            "Fn::Select": [
+                                                                2,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "/",
+                                                                        {
+                                                                            "Ref": "AWS::StackId"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                ]
                             }
                         }
                     ],
@@ -791,7 +1321,7 @@
                 "Source": {
                     "Type": "NO_SOURCE",
                     "BuildSpec": {
-                        "Fn::Sub": "version: 0.2\nphases:\n  pre_build:\n    commands:\n      - echo Logging in to Amazon ECR...\n      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com\n  build:\n    commands:\n      - echo Build started on `date`\n      - echo Pulling the Docker image...\n      - docker pull biolabs/snakemake\n      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG\n      - virtualenv -p python3.8 ~/venv/tibanna\n      - . ~/venv/tibanna/bin/activate\n      - pip3 install tibanna\n  post_build:\n    commands:\n      - echo Build completed on `date`\n      - echo Pushing the Docker image...\n      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG\n      - tibanna deploy_unicorn --usergroup=wgs-pipeline --buckets=$WGS_BUCKET\n"
+                        "Fn::Sub": "version: 0.2\nphases:\n  pre_build:\n    commands:\n     - echo Logging in to Amazon ECR...\n \n  build:\n    commands:\n      - echo Build started on `date`\n      - virtualenv -p python3.8 ~/venv/tibanna\n      - . ~/venv/tibanna/bin/activate\n      - pip3 install tibanna\n      - tibanna deploy_unicorn --usergroup=$TIBANNA_USERGROUP --buckets=$WGS_BUCKET\n  post_build:\n    commands:\n      - echo Build completed on `date`\n      - echo changig role...\n      - aws iam attach-role-policy --policy-arn $TIBANNA_EXECUTION_POLICY --role-name $TIBANNA_CHECK_TASK_ROLENAME\n"
                     }
                 }
             }
@@ -833,7 +1363,7 @@
                         ]
                     ]
                 },
-                "Description": "Codebuild project to remove snakemake image from ecr and purge tibanna",
+                "Description": "Codebuild project to  purge tibanna",
                 "Environment": {
                     "ComputeType": "BUILD_GENERAL1_SMALL",
                     "EnvironmentVariables": [
@@ -851,17 +1381,45 @@
                         },
                         {
                             "Name": "AWS_ECR_REPOSITORY_URI",
-                            "Value": {
-                                "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${EcrRepository}"
-                            }
-                        },
-                        {
-                            "Name": "IMAGE_REPO_NAME",
-                            "Value": "biolabs/snakemake"
+                            "Value": "public.ecr.aws/v0f9o4u7/hesct:latest"
                         },
                         {
                             "Name": "IMAGE_TAG",
                             "Value": "latest"
+                        },
+                        {
+                            "Name": "TIBANNA_USERGROUP",
+                            "Value": {
+                                "Fn::Join": [
+                                    "-",
+                                    [
+                                        "wgs-pipeline",
+                                        {
+                                            "Fn::Select": [
+                                                0,
+                                                {
+                                                    "Fn::Split": [
+                                                        "-",
+                                                        {
+                                                            "Fn::Select": [
+                                                                2,
+                                                                {
+                                                                    "Fn::Split": [
+                                                                        "/",
+                                                                        {
+                                                                            "Ref": "AWS::StackId"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                ]
+                            }
                         }
                     ],
                     "Image": "aws/codebuild/standard:5.0",
@@ -877,15 +1435,9 @@
                 "Source": {
                     "Type": "NO_SOURCE",
                     "BuildSpec": {
-                        "Fn::Sub": "version: 0.2\nphases:\n  pre_build:\n    commands:\n      - echo Logging in to Amazon ECR...\n      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com\n  build:\n    commands:\n      - echo Remove started on `date`\n      - aws ecr batch-delete-image --repository-name biolabs/snakemake --image-ids imageTag=latest\n      - echo install Tibanna...\n      - virtualenv -p python3.8 ~/venv/tibanna\n      - . ~/venv/tibanna/bin/activate\n      - pip3 install tibanna\n  post_build:\n    commands:\n      - echo Build completed on `date`\n      - echo Removing Tibanna and the snakemake image..\n      - tibanna cleanup -g wgs-pipeline -p\n"
+                        "Fn::Sub": "version: 0.2\nphases:\n  pre_build:\n    commands:\n      - echo Logging in to Amazon ECR...\n  build:\n    commands:\n      - echo Remove started on `date`\n      - echo install Tibanna...\n      - virtualenv -p python3.8 ~/venv/tibanna\n      - . ~/venv/tibanna/bin/activate\n      - pip3 install tibanna\n  post_build:\n    commands:\n      - echo Build completed on `date`\n      - echo Removing Tibanna and the snakemake image..\n      - tibanna cleanup -g $TIBANNA_USERGROUP -p\n"
                     }
                 }
-            }
-        },
-        "EcrRepository": {
-            "Type": "AWS::ECR::Repository",
-            "Properties": {
-                "RepositoryName": "biolabs/snakemake"
             }
         },
         "CodeBuildRole": {
@@ -909,7 +1461,37 @@
                 },
                 "Policies": [
                     {
-                        "PolicyName": "WGSPushImageToEcr",
+                        "PolicyName": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    "WGSPushImageToEcr",
+                                    {
+                                        "Fn::Select": [
+                                            0,
+                                            {
+                                                "Fn::Split": [
+                                                    "-",
+                                                    {
+                                                        "Fn::Select": [
+                                                            2,
+                                                            {
+                                                                "Fn::Split": [
+                                                                    "/",
+                                                                    {
+                                                                        "Ref": "AWS::StackId"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            ]
+                        },
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
@@ -922,7 +1504,37 @@
                         }
                     },
                     {
-                        "PolicyName": "CodeBuildLogsRole",
+                        "PolicyName": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    "CodeBuildLogsRole",
+                                    {
+                                        "Fn::Select": [
+                                            0,
+                                            {
+                                                "Fn::Split": [
+                                                    "-",
+                                                    {
+                                                        "Fn::Select": [
+                                                            2,
+                                                            {
+                                                                "Fn::Split": [
+                                                                    "/",
+                                                                    {
+                                                                        "Ref": "AWS::StackId"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            ]
+                        },
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
@@ -943,7 +1555,37 @@
                         }
                     },
                     {
-                        "PolicyName": "GetAndPutArtifacts",
+                        "PolicyName": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    "GetAndPutArtifacts",
+                                    {
+                                        "Fn::Select": [
+                                            0,
+                                            {
+                                                "Fn::Split": [
+                                                    "-",
+                                                    {
+                                                        "Fn::Select": [
+                                                            2,
+                                                            {
+                                                                "Fn::Split": [
+                                                                    "/",
+                                                                    {
+                                                                        "Ref": "AWS::StackId"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            ]
+                        },
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
@@ -1004,21 +1646,7 @@
                     },
                     {
                         "Name": "snakemake",
-                        "Image": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "AWS::AccountId"
-                                    },
-                                    ".dkr.ecr.",
-                                    {
-                                        "Ref": "AWS::Region"
-                                    },
-                                    ".amazonaws.com/biolabs/snakemake:latest"
-                                ]
-                            ]
-                        },
+                        "Image": "public.ecr.aws/v0f9o4u7/hesct:latest",
                         "Essential": true,
                         "LogConfiguration": {
                             "LogDriver": "awslogs",
@@ -1052,11 +1680,44 @@
                             {
                                 "Ref": "AWS::AccountId"
                             },
-                            ":role/wgs-pipeline-role"
+                            ":role/",
+                            {
+                                "Ref": "WGSPipelineRole"
+                            }
                         ]
                     ]
                 },
-                "Family": "wgs-pipeline-task",
+                "Family": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "wgs-pipeline-task",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "Memory": 9216,
                 "NetworkMode": "awsvpc",
                 "RuntimePlatform": {
@@ -1071,7 +1732,10 @@
                             {
                                 "Ref": "AWS::AccountId"
                             },
-                            ":role/wgs-pipeline-role"
+                            ":role/",
+                            {
+                                "Ref": "WGSPipelineRole"
+                            }
                         ]
                     ]
                 }
@@ -1081,7 +1745,37 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
                 "Description": "starts a state machine",
-                "FunctionName": "WGSStateExecutor",
+                "FunctionName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "WGSStateExecutor",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "Handler": "index.lambda_handler",
                 "MemorySize": 128,
                 "Runtime": "python3.9",
@@ -1094,13 +1788,46 @@
                 "Timeout": 240,
                 "Environment": {
                     "Variables": {
-                        "CLUSTER": "wgs-pipeline-cluster",
+                        "CLUSTER": {
+                            "Ref": "WGSECSCluster"
+                        },
                         "CMD": {
                             "Fn::Sub": [
-                                "cd ~/ ; curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"./awscliv2.zip\" ; unzip ./awscliv2.zip ; ./aws/install ; /usr/local/bin/aws s3 sync s3://${WGS_BUCKET}/data/snakefiles ./; pwd; pip install -U tibanna; export TIBANNA_DEFAULT_STEP_FUNCTION_NAME=tibanna_unicorn_wgs-pipeline ; snakemake -R samtools_sort --tibanna --precommand=\"ln -s /data1/snakemake/${WGS_BUCKET}/data /data \"  --tibanna-config spot_instance=false behavior_on_capacity_limit=wait_and_retry --default-remote-prefix=${WGS_BUCKET} --jobs=2 --use-conda;",
+                                "cd ~/ ; curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"./awscliv2.zip\" ; unzip ./awscliv2.zip ; ./aws/install ; /usr/local/bin/aws s3 sync s3://${WGS_BUCKET}/data/snakefiles ./; pwd; pip install -U tibanna; export TIBANNA_DEFAULT_STEP_FUNCTION_NAME=${TIBANNA_STEP_FUNCTION} ; snakemake -R samtools_sort --tibanna --precommand=\"ln -s /data1/snakemake/${WGS_BUCKET}/data /data \"  --tibanna-config spot_instance=false behavior_on_capacity_limit=wait_and_retry --default-remote-prefix=${WGS_BUCKET} --jobs=2 --use-conda;",
                                 {
                                     "WGS_BUCKET": {
                                         "Ref": "WGSBucket"
+                                    },
+                                    "TIBANNA_STEP_FUNCTION": {
+                                        "Fn::Join": [
+                                            "-",
+                                            [
+                                                "tibanna_unicorn_wgs-pipeline",
+                                                {
+                                                    "Fn::Select": [
+                                                        0,
+                                                        {
+                                                            "Fn::Split": [
+                                                                "-",
+                                                                {
+                                                                    "Fn::Select": [
+                                                                        2,
+                                                                        {
+                                                                            "Fn::Split": [
+                                                                                "/",
+                                                                                {
+                                                                                    "Ref": "AWS::StackId"
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        ]
                                     }
                                 }
                             ]
@@ -1114,7 +1841,38 @@
                         "SUBNET_B": {
                             "Ref": "SubnetB"
                         },
-                        "TASK": "wgs-pipeline-task:1"
+                        "TASK": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "wgs-pipeline-task-",
+                                    {
+                                        "Fn::Select": [
+                                            0,
+                                            {
+                                                "Fn::Split": [
+                                                    "-",
+                                                    {
+                                                        "Fn::Select": [
+                                                            2,
+                                                            {
+                                                                "Fn::Split": [
+                                                                    "/",
+                                                                    {
+                                                                        "Ref": "AWS::StackId"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    ":1"
+                                ]
+                            ]
+                        }
                     }
                 },
                 "Code": {
@@ -1212,7 +1970,6 @@
                                         "s3:ListBucket",
                                         "s3:ListObjects",
                                         "s3:PutObject"
-
                                     ],
                                     "Resource": "*",
                                     "Effect": "Allow"
@@ -1268,7 +2025,7 @@
                     }
                 ]
             }
-        },   
+        },
         "InstanceSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
@@ -1284,14 +2041,13 @@
                     }
                 ]
             }
-        },  
+        },
         "InitInstance": {
             "Type": "AWS::EC2::Instance",
             "DependsOn": [
                 "EC2InstanceRole",
                 "EC2InstanceProfile",
                 "InstanceSecurityGroup"
-
             ],
             "Properties": {
                 "InstanceType": "t2.micro",
@@ -1320,23 +2076,84 @@
                 }
             }
         }
-        
     },
     "Outputs": {
-        "WGSVpcId": {
-            "Description": "The Snakemake VPC ID",
+        "WGSExecutor": {
+            "Description": "Your lambda function to execute pipeline",
             "Value": {
-                "Ref": "VPC"
+                "Fn::Join": [
+                    "",
+                    [
+                        "https://",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ".console.aws.amazon.com/lambda/home?",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "#/functions/",
+                        {
+                            "Ref": "WGSLambdaFunction"
+                        }
+                    ]
+                ]
             }
         },
         "WGSECSCluster": {
             "Description": "The wgs-pipeline-east ECS cluster.",
             "Value": {
-                "Ref": "WGSECSCluster"
+                "Fn::Join": [
+                    "",
+                    [
+                        "https://",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ".console.aws.amazon.com/ecs/v2/clusters/",
+                        {
+                            "Ref": "WGSECSCluster"
+                        }
+                    ]
+                ]
+            }
+        },
+        "WGSStackId": {
+            "Description": "Your stack identifier for resources",
+            "Value": {
+                "Fn::Join": [
+                    "-",
+                    [
+                        "",
+                        {
+                            "Fn::Select": [
+                                0,
+                                {
+                                    "Fn::Split": [
+                                        "-",
+                                        {
+                                            "Fn::Select": [
+                                                2,
+                                                {
+                                                    "Fn::Split": [
+                                                        "/",
+                                                        {
+                                                            "Ref": "AWS::StackId"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                ]
             }
         },
         "WGSBucket": {
-            "Description": "The bucket for data and snakefiles.",
+            "Description": "Your bucket for data and snakefiles.",
             "Value": {
                 "Fn::Join": [
                     "",
@@ -1349,6 +2166,5 @@
                 ]
             }
         }
-      
     }
 }
