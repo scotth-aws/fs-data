@@ -124,7 +124,7 @@
         }
     },
     "Outputs": {
-		"BudgetURL": {
+		"Budget": {
 			"Description": "Budget URL",
 			"Value": {
 				"Fn::Join": [

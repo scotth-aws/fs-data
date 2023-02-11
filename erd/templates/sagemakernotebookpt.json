@@ -19,7 +19,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "edu-research-sagemaker-bucket",
+                            "edu-research-sagemaker-pytorch-bucket",
                             {
                                 "Fn::Select": [
                                     0,
@@ -51,16 +51,16 @@
         "defaultRepository": {
             "Type": "AWS::SageMaker::CodeRepository",
             "Properties": {
-                "CodeRepositoryName": "defaultRepo",
+                "CodeRepositoryName": "examplesRepo",
                 "GitConfig": {
-                    "RepositoryUrl": "https://github.com/awsdocs/amazon-sagemaker-developer-guide"
+                    "RepositoryUrl": "https://github.com/aws/amazon-sagemaker-examples"
                 }
             }
         },
         "BasicNotebookInstanceLifecycleConfig": {
             "Type": "AWS::SageMaker::NotebookInstanceLifecycleConfig",
             "Properties": {
-                "NotebookInstanceLifecycleConfigName": "stopidle",
+                "NotebookInstanceLifecycleConfigName": "stopidle-pytorch",
                 "OnStart": [
                     {
                         "Content": {
@@ -73,7 +73,7 @@
         "ExecutionRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "sagemaker-notebook-role",
+                "RoleName": "sagemaker-pytorch-notebook-role",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -93,7 +93,7 @@
                 "Path": "/",
                 "Policies": [
                     {
-                        "PolicyName": "sagemaker-notebook-policy",
+                        "PolicyName": "sagemaker-pytorch-notebook-policy",
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
@@ -134,7 +134,7 @@
             "Type": "AWS::SageMaker::NotebookInstance",
             "Properties": {
                 "AdditionalCodeRepositories": [
-                    "https://github.com/aws/amazon-sagemaker-examples"
+                    "https://github.com/awslabs/sagemaker-defect-detection"
                 ],
                 "DefaultCodeRepository": {
                     "Fn::GetAtt": [
@@ -148,7 +148,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "omics-research-notebook-",
+                            "pytorch-research-notebook-",
                             {
                                 "Fn::Select": [
                                     0,
@@ -192,7 +192,7 @@
         }
     },
     "Outputs": {
-		"Notebooks": {
+		"SageMakerNotebook": {
 			"Description": "Notebooks URL",
 			"Value": {
 				"Fn::Join": [
@@ -223,10 +223,6 @@
                     ]
                 ]
             }
-        },
-        "WorkshopURL": {
-			"Description": "Medical Imaging Workshop URL",
-            "Value": "https://sagemaker-examples.readthedocs.io/en/latest/use-cases/computer_vision/metastases-detection-pipeline.html"
         }
     }
 }
