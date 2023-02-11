@@ -51,7 +51,37 @@
         "defaultRepository": {
             "Type": "AWS::SageMaker::CodeRepository",
             "Properties": {
-                "CodeRepositoryName": "examplesRepo",
+                "CodeRepositoryName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "examplesRepo",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "GitConfig": {
                     "RepositoryUrl": "https://github.com/aws/amazon-sagemaker-examples"
                 }
@@ -60,7 +90,37 @@
         "BasicNotebookInstanceLifecycleConfig": {
             "Type": "AWS::SageMaker::NotebookInstanceLifecycleConfig",
             "Properties": {
-                "NotebookInstanceLifecycleConfigName": "stopidle-pytorch",
+                "NotebookInstanceLifecycleConfigName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "stopidle-pytorch-",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "OnStart": [
                     {
                         "Content": {
@@ -205,7 +265,13 @@
                       {
                         "Ref": "AWS::Region"
                       },
-                      "#/notebook-instances"
+                      "#/notebook-instances/",
+                      {
+                        "Fn::GetAtt": [
+                            "sageMakerNotebook",
+                            "NotebookInstanceName"
+                        ]
+                      }
                     ]
                   ]
 			}

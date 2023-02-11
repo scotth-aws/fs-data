@@ -51,7 +51,37 @@
         "defaultRepository": {
             "Type": "AWS::SageMaker::CodeRepository",
             "Properties": {
-                "CodeRepositoryName": "defaultRepo",
+                "CodeRepositoryName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "defaultRepo",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "GitConfig": {
                     "RepositoryUrl": "https://github.com/awsdocs/amazon-sagemaker-developer-guide"
                 }
@@ -60,7 +90,37 @@
         "BasicNotebookInstanceLifecycleConfig": {
             "Type": "AWS::SageMaker::NotebookInstanceLifecycleConfig",
             "Properties": {
-                "NotebookInstanceLifecycleConfigName": "stopidle",
+                "NotebookInstanceLifecycleConfigName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "stopidle-",
+                            {
+                                "Fn::Select": [
+                                    0,
+                                    {
+                                        "Fn::Split": [
+                                            "-",
+                                            {
+                                                "Fn::Select": [
+                                                    2,
+                                                    {
+                                                        "Fn::Split": [
+                                                            "/",
+                                                            {
+                                                                "Ref": "AWS::StackId"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                },
                 "OnStart": [
                     {
                         "Content": {
@@ -205,7 +265,14 @@
                       {
                         "Ref": "AWS::Region"
                       },
-                      "#/notebook-instances"
+                      "#/notebook-instances/",
+                      {
+                        "Fn::GetAtt": [
+                            "sageMakerNotebook",
+                            "NotebookInstanceName"
+                        ]
+                      }
+
                     ]
                   ]
 			}
