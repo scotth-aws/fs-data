@@ -2071,7 +2071,7 @@
                 ],
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Sub": "#cloud-config\nrepo_update: true\nrepo_upgrade: all\n\npackages:\n- git\n\nruncmd:\n- export HOME=/root\n- echo \"Start of Script\"\n- aws codebuild start-build --region ${AWS::Region} --project-name ${CodeBuildProjectCreate}\n- git clone https://github.com/scottwhendrickson/erd-data.git\n- cd erd-data\n- aws s3 sync data s3://${WGSBucket}\n- echo \"End of Script\"\n- aws ec2 terminate-instances --region ${AWS::Region} --instance-ids $(curl http://169.254.169.254/latest/meta-data/instance-id/)\n"
+                        "Fn::Sub": "#cloud-config\nrepo_update: true\nrepo_upgrade: all\n\npackages:\n- git\n\nruncmd:\n- export HOME=/root\n- echo \"Start of Script\"\n- aws codebuild start-build --region ${AWS::Region} --project-name ${CodeBuildProjectCreate}\n- git clone https://github.com/scotth-aws/fs-data.git\n- cd fs-data\n- aws s3 sync data s3://${WGSBucket}\n- echo \"End of Script\"\n- aws ec2 terminate-instances --region ${AWS::Region} --instance-ids $(curl http://169.254.169.254/latest/meta-data/instance-id/)\n"
                     }
                 }
             }
