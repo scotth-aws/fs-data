@@ -141,6 +141,21 @@
                     ]
                   ]
 			}
+        },
+        "Credits": {
+			"Description": "Credits URL",
+			"Value": {
+				"Fn::Join": [
+                    "", [
+                      "http://",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ".console.aws.amazon.com/billing/home#/credits"
+                    ]
+                  ]
+			}
         }
     }
+    
 }
