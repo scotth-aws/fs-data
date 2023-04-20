@@ -108,6 +108,16 @@
         }
     },
     "Resources": {
+        "LaunchTemplate": {
+            "Type": "AWS::EC2::LaunchTemplate",
+            "Properties": {
+                "LaunchTemplateData": {
+                    "MetadataOptions": {
+                        "HttpTokens": "required"
+                    }
+                }
+            }
+        },
         "RStudioEC2Bucket": {
             "Type": "AWS::S3::Bucket",
             "DeletionPolicy": "Retain",
@@ -290,12 +300,18 @@
         "EC2Instance": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
+                "LaunchTemplate": {
+                    "LaunchTemplateId": {
+                        "Ref": "LaunchTemplate"
+                    },
+                    "Version": "1"
+                },
                 "IamInstanceProfile": {
                     "Ref": "EC2InstanceProfile"
                 },
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Sub": "#!/bin/bash\ncd;mkdir research;cd research;touch testfile;echo \"aws s3 ls s3://${RStudioEC2Bucket}\" > s3_cmds.sh;echo \"aws s3 cp ./testfile s3://${RStudioEC2Bucket}\" >> s3_cmds.sh; echo \"aws s3 cp s3://${RStudioEC2Bucket}\" >> s3_cmds.sh;chmod u+x s3_cmds.sh;./s3_cmds.sh;cp ./s3_cmds.sh /opt"
+                        "Fn::Sub": "#!/bin/bash\ncd;mkdir research;cd research;touch testfile;echo \"aws s3 ls s3://${RStudioEC2Bucket}\" > s3_cmds.sh;echo \"aws s3 cp ./testfile s3://${RStudioEC2Bucket}\" >> s3_cmds.sh; echo \"aws s3 cp s3://${RStudioEC2Bucket}\" >> s3_cmds.sh;chmod u+x s3_cmds.sh;./s3_cmds.sh;cp ./s3_cmds.sh /opt;curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"; unzip awscliv2.zip; sudo ./aws/install"
                     }
                 },
                 "InstanceType": {

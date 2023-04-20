@@ -31,10 +31,10 @@
     "Mappings": {
         "RegionMap": {
             "us-east-1": {
-                "HVM64": "ami-01fbfc46298a16a98"
+                "HVM64": "ami-069aabeee6f53e7bf"
             },
             "us-east-2": {
-                "HVM64": "ami-0c6cb56f1182b1e73"
+                "HVM64": "ami-0103f211a154d64a6"
             },
             "us-west-1": {
                 "HVM64": "ami-00dcd88aa75cfa96a"
@@ -48,6 +48,16 @@
         }
     },
     "Resources": {
+        "LaunchTemplate": {
+            "Type": "AWS::EC2::LaunchTemplate",
+            "Properties": {
+                "LaunchTemplateData": {
+                    "MetadataOptions": {
+                        "HttpTokens": "required"
+                    }
+                }
+            }
+        },
         "EC2Bucket": {
             "Type": "AWS::S3::Bucket",
             "DeletionPolicy": "Retain",
@@ -231,6 +241,12 @@
             "DependsOn": "EC2Bucket",
             "Type": "AWS::EC2::Instance",
             "Properties": {
+                "LaunchTemplate": {
+                    "LaunchTemplateId": {
+                        "Ref": "LaunchTemplate"
+                    },
+                    "Version": "1"
+                },
                 "IamInstanceProfile": {
                     "Ref": "EC2InstanceProfile"
                 },
@@ -255,7 +271,7 @@
                 ],
                 "UserData": {
                     "Fn::Base64": {
-                        "Fn::Sub": "#!/bin/bash\ncd;mkdir research;cd research;touch testfile;echo \"aws s3 ls s3://${EC2Bucket}\" > s3_cmds.sh;echo \"aws s3 cp ./testfile s3://${EC2Bucket}\" >> s3_cmds.sh; echo \"aws s3 cp s3://${EC2Bucket}\" >> s3_cmds.sh;chmod u+x s3_cmds.sh;./s3_cmds.sh;cp ./s3_cmds.sh /opt"
+                        "Fn::Sub": "#!/bin/bash\ncd;mkdir research;cd research;touch testfile;echo \"aws s3 ls s3://${EC2Bucket}\" > s3_cmds.sh;echo \"aws s3 cp ./testfile s3://${EC2Bucket}\" >> s3_cmds.sh; echo \"aws s3 cp s3://${EC2Bucket} ./\" >> s3_cmds.sh;chmod u+x s3_cmds.sh;./s3_cmds.sh;cp ./s3_cmds.sh /opt;curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"; unzip awscliv2.zip; sudo ./aws/install"
                     }
                 },
                 "ImageId": {
@@ -335,12 +351,27 @@
                 "Ref": "EC2Instance"
             }
         },
-        "AZ": {
-            "Description": "Availability Zone of the newly created EC2 instance",
+        "ResearchArchitecture": {
+            "Description": "Deployment Architecture",
             "Value": {
-                "Fn::GetAtt": [
-                    "EC2Instance",
-                    "AvailabilityZone"
+                "Fn::Join": [
+                    "",
+                    [
+                        "https://di4o3xrcsr8br.cloudfront.net/ERD-EC2-Architecture.png"
+                       
+                    ]
+                ]
+            }
+        },
+        "ResearchNeeds": {
+            "Description": "Researcher Needs",
+            "Value": {
+                "Fn::Join": [
+                    "",
+                    [
+                        "https://di4o3xrcsr8br.cloudfront.net/ERD-EC2-ResearcherSays.png"
+                       
+                    ]
                 ]
             }
         },

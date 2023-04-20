@@ -49,6 +49,16 @@
         }
     },
     "Resources": {
+        "LaunchTemplate": {
+            "Type": "AWS::EC2::LaunchTemplate",
+            "Properties": {
+                "LaunchTemplateData": {
+                    "MetadataOptions": {
+                        "HttpTokens": "required"
+                    }
+                }
+            }
+        },
         "EC2Bucket": {
             "Type": "AWS::S3::Bucket",
             "DeletionPolicy": "Retain",
@@ -252,6 +262,12 @@
             "Type": "AWS::EC2::Instance",
             "DependsOn": "EC2Bucket",
             "Properties": {
+                "LaunchTemplate": {
+                    "LaunchTemplateId": {
+                        "Ref": "LaunchTemplate"
+                    },
+                    "Version": "1"
+                },
                 "IamInstanceProfile": {
                     "Ref": "EC2InstanceProfile"
                 },
