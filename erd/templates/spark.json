@@ -32,10 +32,10 @@
     "Mappings": {
         "RegionMap": {
             "us-east-1": {
-                "HVM64": "ami-01fbfc46298a16a98"
+                "HVM64": "ami-069aabeee6f53e7bf"
             },
             "us-east-2": {
-                "HVM64": "ami-0c6cb56f1182b1e73"
+                "HVM64": "ami-0103f211a154d64a6"
             },
             "us-west-1": {
                 "HVM64": "ami-00dcd88aa75cfa96a"
