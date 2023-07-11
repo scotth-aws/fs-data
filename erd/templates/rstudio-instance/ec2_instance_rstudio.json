@@ -1,22 +1,72 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "AWS CloudFormation Sample Template EC2InstanceWithSecurityGroupSample: Create an Amazon EC2 instance running the Amazon Linux AMI. The AMI is chosen based on the region in which the stack is run. This example creates an EC2 security group for the instance to give you SSH access. **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Description": "AWS CloudFormation Research Template: Create an Amazon EC2 instance running the Amazon Linux AMI with RStudio deployed.  This example creates an EC2 security group for the instance to give you SSH access. It also creates an S3 bucket that the instance can access from the CLI.",
     "Parameters": {
         "InstanceType": {
             "Description": "What is the EC2 instance type?",
             "Type": "String",
-            "Default": "t2.medium",
+            "Default": "t2.small",
             "AllowedValues": [
+                "t1.micro",
+                "t2.nano",
+                "t2.micro",
                 "t2.small",
                 "t2.medium",
                 "t2.large",
-                "c5a.large",
-                "c5a.xlarge",
-                "r4.large",
-                "r4.xlarge",
-                "g4dn.2xlarge"
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "m4.large",
+                "m4.xlarge",
+                "m4.2xlarge",
+                "m4.4xlarge",
+                "m4.10xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "c3.large",
+                "c3.xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge",
+                "c4.large",
+                "c4.xlarge",
+                "c4.2xlarge",
+                "c4.4xlarge",
+                "c4.8xlarge",
+                "g2.2xlarge",
+                "g2.8xlarge",
+                "r3.large",
+                "r3.xlarge",
+                "r3.2xlarge",
+                "r3.4xlarge",
+                "r3.8xlarge",
+                "i2.xlarge",
+                "i2.2xlarge",
+                "i2.4xlarge",
+                "i2.8xlarge",
+                "d2.xlarge",
+                "d2.2xlarge",
+                "d2.4xlarge",
+                "d2.8xlarge",
+                "hi1.4xlarge",
+                "hs1.8xlarge",
+                "cr1.8xlarge",
+                "cc2.8xlarge",
+                "cg1.4xlarge"
             ],
             "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "CognitoUser": {
+            "Type": "String",
+            "Default": "scott"
         },
         "SSHLocation": {
             "Description": "The IP address range that can be used to SSH to the EC2 instances",
@@ -33,21 +83,35 @@
         }
     },
     "Mappings": {
-        "RegionMap": {
+        "AWSInstanceType2Arch": {
+            "t2.medium": {
+                "Arch": "HVM64"
+            },
+            "t2.large": {
+                "Arch": "HVM64"
+            },
+            "t2.xlarge": {
+                "Arch": "HVM64"
+            },
+            "m2.xlarge": {
+                "Arch": "PV64"
+            },
+            "m2.2xlarge": {
+                "Arch": "PV64"
+            }
+        },
+        "AWSRegionArch2AMI": {
             "us-east-1": {
                 "HVM64": "ami-069aabeee6f53e7bf"
             },
             "us-east-2": {
                 "HVM64": "ami-0103f211a154d64a6"
             },
-            "us-west-1": {
-                "HVM64": "ami-00dcd88aa75cfa96a"
-            },
             "us-west-2": {
-                "HVM64": "ami-04e914639d0cca79a"
+                "HVM64": "ami-0dc8133a777c1be2c"
             },
-            "eu-west-1": {
-                "HVM64": "ami-020a2770a6a61ec2b"
+            "us-west-1": {
+                "HVM64": "ami-01c4bf25032f468d5"
             }
         }
     },
@@ -62,7 +126,7 @@
                 }
             }
         },
-        "EC2Bucket": {
+        "RStudioEC2Bucket": {
             "Type": "AWS::S3::Bucket",
             "DeletionPolicy": "Retain",
             "Properties": {
@@ -70,7 +134,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "edu-research-ec2-bucket",
+                            {"Fn::Join" : [ "-", [ {"Ref": "CognitoUser"},"edu-research-rstudio-ec2-bucket" ] ]},
                             {
                                 "Fn::Select": [
                                     0,
@@ -99,7 +163,7 @@
                 }
             }
         },
-        "EC2InstanceRole": {
+        "RStudioEC2InstanceRole": {
             "Type": "AWS::IAM::Role",
             "DeletionPolicy": "Retain",
             "Properties": {
@@ -108,7 +172,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "EDUResearchEC2Role-",
+                            "RStudioEDUResearchEC2Role-",
                             {
                                 "Fn::Select": [
                                     0,
@@ -170,7 +234,7 @@
                                                 [
                                                     "arn:aws:s3:::",
                                                     {
-                                                        "Ref": "EC2Bucket"
+                                                        "Ref": "RStudioEC2Bucket"
                                                     },
                                                     "/*"
                                                 ]
@@ -182,14 +246,13 @@
                                                 [
                                                     "arn:aws:s3:::",
                                                     {
-                                                        "Ref": "EC2Bucket"
+                                                        "Ref": "RStudioEC2Bucket"
                                                     }
                                                 ]
                                             ]
                                         }
                                     ]
                                 }
-                                
                             ]
                         }
                     }
@@ -207,7 +270,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "edu-research-ec2-instance-profile-",
+                            "edu-research-rstudio-ec2-instance-profile-",
                             {
                                 "Fn::Select": [
                                     0,
@@ -237,13 +300,12 @@
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "EC2InstanceRole"
+                        "Ref": "RStudioEC2InstanceRole"
                     }
                 ]
             }
-        },     
+        },
         "EC2Instance": {
-            "DependsOn": "EC2Bucket",
             "Type": "AWS::EC2::Instance",
             "Properties": {
                 "LaunchTemplate": {
@@ -255,37 +317,40 @@
                 "IamInstanceProfile": {
                     "Ref": "EC2InstanceProfile"
                 },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Sub": "#!/bin/bash\ncd;mkdir research;cd research;touch testfile;echo \"aws s3 ls s3://${RStudioEC2Bucket}\" > s3_cmds.sh;echo \"aws s3 cp ./testfile s3://${RStudioEC2Bucket}\" >> s3_cmds.sh; echo \"aws s3 cp s3://${RStudioEC2Bucket}\" >> s3_cmds.sh;chmod u+x s3_cmds.sh;./s3_cmds.sh;cp ./s3_cmds.sh /opt;curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"; unzip awscliv2.zip; sudo ./aws/install"
+                    }
+                },
                 "InstanceType": {
                     "Ref": "InstanceType"
                 },
-                "BlockDeviceMappings": [
-                    {
-                        "DeviceName": "/dev/xvda",
-                        "Ebs": {
-                            "VolumeType": "gp2",
-                            "VolumeSize": "100",
-                            "DeleteOnTermination": "true",
-                            "Encrypted": "false"
-                        }
-                    }
-                ],
                 "SecurityGroups": [
                     {
                         "Ref": "InstanceSecurityGroup"
                     }
                 ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Sub": "#!/bin/bash\ncd;mkdir research;cd research;touch testfile;echo \"aws s3 ls s3://${EC2Bucket}\" > s3_cmds.sh;echo \"aws s3 cp ./testfile s3://${EC2Bucket}\" >> s3_cmds.sh; echo \"aws s3 cp s3://${EC2Bucket} ./\" >> s3_cmds.sh;chmod u+x s3_cmds.sh;./s3_cmds.sh;cp ./s3_cmds.sh /opt;curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"; unzip awscliv2.zip; sudo ./aws/install"
-                    }
-                },
                 "ImageId": {
-                    "Ref": "LatestAmiId"
+                    "Fn::FindInMap": [
+                        "AWSRegionArch2AMI",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        {
+                            "Fn::FindInMap": [
+                                "AWSInstanceType2Arch",
+                                {
+                                    "Ref": "InstanceType"
+                                },
+                                "Arch"
+                            ]
+                        }
+                    ]
                 },
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "EDU Research Instance"
+                        "Value": "RStudio Instance"
                     }
                 ]
             }
@@ -302,12 +367,26 @@
                         "CidrIp": {
                             "Ref": "SSHLocation"
                         }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": {
+                            "Ref": "SSHLocation"
+                        }
                     }
                 ]
             }
         }
     },
     "Outputs": {
+        "InstanceId": {
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance"
+            }
+        },
         "InstanceSummaryPage": {
             "Description": "AWS Console Summary Page for this Instance",
             "Value": {
@@ -330,47 +409,39 @@
                 ]
             }
         },
-        "S3Bucket": {
-            "Description": "S3 Bucket that the EC2 instance can read and write from/to",
+        "RStudioLogin": {
+            "Description": "RStudio Login",
             "Value": {
                 "Fn::Join": [
                     "",
                     [
-                        "https://s3.console.aws.amazon.com/s3/buckets/",
+                        "http://",
                         {
-                            "Ref": "EC2Bucket"
-                        }
+                            "Fn::GetAtt": [
+                                "EC2Instance",
+                                "PublicIp"
+                            ]
+                        },
+                        ":80"
                     ]
                 ]
             }
         },
-        "InstanceId": {
-            "Description": "InstanceId of the newly created EC2 instance",
+        "AZ": {
+            "Description": "Availability Zone of the newly created EC2 instance",
             "Value": {
-                "Ref": "EC2Instance"
-            }
-        },
-        "ResearchArchitecture": {
-            "Description": "Deployment Architecture",
-            "Value": {
-                "Fn::Join": [
-                    "",
-                    [
-                        "https://di4o3xrcsr8br.cloudfront.net/ERD-EC2-Architecture.png"
-                       
-                    ]
+                "Fn::GetAtt": [
+                    "EC2Instance",
+                    "AvailabilityZone"
                 ]
             }
         },
-        "ResearchNeeds": {
-            "Description": "Researcher Needs",
+        "PublicDNS": {
+            "Description": "Public DNSName of the newly created EC2 instance",
             "Value": {
-                "Fn::Join": [
-                    "",
-                    [
-                        "https://di4o3xrcsr8br.cloudfront.net/ERD-EC2-ResearcherSays.png"
-                       
-                    ]
+                "Fn::GetAtt": [
+                    "EC2Instance",
+                    "PublicDnsName"
                 ]
             }
         },
@@ -382,11 +453,6 @@
                     "PublicIp"
                 ]
             }
-        },
-        "S3CLICommands": {
-            "Description": "This shell script on the EC2 instance shows how to read and write from your S3 bucket",
-            "Value": "Review the script under /opt called s3_cmds.sh"
-            
         }
     }
 }

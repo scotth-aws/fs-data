@@ -1,15 +1,76 @@
 {
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Research Template: Create a SageMaker Notebook with and S3 bucket. Examples repos are attached.",
     "Parameters": {
-		
-		"InstanceType": {
-			"Description": "What is the EC2 instance type?",
-			"Type": "String",
-			"Default": "ml.t3.medium",
-			"AllowedValues": ["ml.t3.medium","ml.t3.large", "ml.t3.xlarge",  "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
-			"ConstraintDescription": "must be a valid EC2 instance type."
-		}
-
-	},
+        "InstanceType": {
+            "Description": "What is the EC2 instance type?",
+            "Type": "String",
+            "Default": "ml.t3.medium",
+            "AllowedValues": [
+                "ml.t3.medium",
+                "ml.t3.large",
+                "ml.t3.xlarge",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "m4.large",
+                "m4.xlarge",
+                "m4.2xlarge",
+                "m4.4xlarge",
+                "m4.10xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "c3.large",
+                "c3.xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge",
+                "c4.large",
+                "c4.xlarge",
+                "c4.2xlarge",
+                "c4.4xlarge",
+                "c4.8xlarge",
+                "g2.2xlarge",
+                "g2.8xlarge",
+                "r3.large",
+                "r3.xlarge",
+                "r3.2xlarge",
+                "r3.4xlarge",
+                "r3.8xlarge",
+                "i2.xlarge",
+                "i2.2xlarge",
+                "i2.4xlarge",
+                "i2.8xlarge",
+                "d2.xlarge",
+                "d2.2xlarge",
+                "d2.4xlarge",
+                "d2.8xlarge",
+                "hi1.4xlarge",
+                "hs1.8xlarge",
+                "cr1.8xlarge",
+                "cc2.8xlarge",
+                "cg1.4xlarge"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "CognitoUser": {
+            "Type": "String",
+            "Default": "scotth"
+        }
+    },
     "Resources": {
         "EC2Bucket": {
             "Type": "AWS::S3::Bucket",
@@ -19,7 +80,17 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "edu-research-sagemaker-pytorch-bucket",
+                            {
+                                "Fn::Join": [
+                                    "-",
+                                    [
+                                        {
+                                            "Ref": "CognitoUser"
+                                        },
+                                        "edu-research-sagemaker-bucket"
+                                    ]
+                                ]
+                            },
                             {
                                 "Fn::Select": [
                                     0,
@@ -55,7 +126,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "examplesRepo",
+                            "defaultRepo",
                             {
                                 "Fn::Select": [
                                     0,
@@ -83,7 +154,7 @@
                     ]
                 },
                 "GitConfig": {
-                    "RepositoryUrl": "https://github.com/aws/amazon-sagemaker-examples"
+                    "RepositoryUrl": "https://github.com/awsdocs/amazon-sagemaker-developer-guide"
                 }
             }
         },
@@ -94,7 +165,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "stopidle-pytorch-",
+                            "stopidle-",
                             {
                                 "Fn::Select": [
                                     0,
@@ -133,7 +204,7 @@
         "ExecutionRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "sagemaker-pytorch-notebook-role",
+                "RoleName": "sagemaker-notebook-role",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -153,7 +224,7 @@
                 "Path": "/",
                 "Policies": [
                     {
-                        "PolicyName": "sagemaker-pytorch-notebook-policy",
+                        "PolicyName": "sagemaker-notebook-policy",
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
@@ -194,7 +265,7 @@
             "Type": "AWS::SageMaker::NotebookInstance",
             "Properties": {
                 "AdditionalCodeRepositories": [
-                    "https://github.com/awslabs/sagemaker-defect-detection"
+                    "https://github.com/aws/amazon-sagemaker-examples"
                 ],
                 "DefaultCodeRepository": {
                     "Fn::GetAtt": [
@@ -208,7 +279,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "pytorch-research-notebook-",
+                            "omics-research-notebook-",
                             {
                                 "Fn::Select": [
                                     0,
@@ -252,29 +323,30 @@
         }
     },
     "Outputs": {
-		"SageMakerNotebook": {
-			"Description": "Notebooks URL",
-			"Value": {
-				"Fn::Join": [
-                    "", [
-                      "http://",
-                      {
-                        "Ref": "AWS::Region"
-                      },
-                      ".console.aws.amazon.com/sagemaker/home?region=",
-                      {
-                        "Ref": "AWS::Region"
-                      },
-                      "#/notebook-instances/",
-                      {
-                        "Fn::GetAtt": [
-                            "sageMakerNotebook",
-                            "NotebookInstanceName"
-                        ]
-                      }
+        "Notebooks": {
+            "Description": "Notebooks URL",
+            "Value": {
+                "Fn::Join": [
+                    "",
+                    [
+                        "http://",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ".console.aws.amazon.com/sagemaker/home?region=",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "#/notebook-instances/",
+                        {
+                            "Fn::GetAtt": [
+                                "sageMakerNotebook",
+                                "NotebookInstanceName"
+                            ]
+                        }
                     ]
-                  ]
-			}
+                ]
+            }
         },
         "S3Bucket": {
             "Description": "S3 Bucket that the Sagemaker can read and write from/to",
@@ -289,6 +361,10 @@
                     ]
                 ]
             }
+        },
+        "WorkshopURL": {
+            "Description": "Medical Imaging Workshop URL",
+            "Value": "https://sagemaker-examples.readthedocs.io/en/latest/use-cases/computer_vision/metastases-detection-pipeline.html"
         }
     }
 }

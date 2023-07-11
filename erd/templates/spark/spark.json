@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "AWS CloudFormation Sample Template EC2InstanceWithSecurityGroupSample: Create an Amazon EC2 instance running the Amazon Linux AMI. The AMI is chosen based on the region in which the stack is run. This example creates an EC2 security group for the instance to give you SSH access. **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Description": "AWS CloudFormation Research Template: Create an Amazon EC2 instance running the Amazon Linux AMI with a Spark Docker Container deployed.  This example creates an EC2 security group for the instance to give you SSH access. It also creates an S3 bucket that the instance can access from the CLI.",
     "Parameters": {
         "InstanceType": {
             "Description": "What is the EC2 instance type?",
@@ -19,6 +19,10 @@
             ],
             "ConstraintDescription": "must be a valid EC2 instance type."
         },
+        "CognitoUser": {
+            "Type": "String",
+            "Default": "scott"
+        },
         "SSHLocation": {
             "Description": "The IP address range that can be used to SSH to the EC2 instances",
             "Type": "String",
@@ -27,6 +31,10 @@
             "Default": "0.0.0.0/0",
             "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
             "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+        },
+        "LatestAmiId": {
+            "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+            "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
         }
     },
     "Mappings": {
@@ -41,7 +49,7 @@
                 "HVM64": "ami-00dcd88aa75cfa96a"
             },
             "us-west-2": {
-                "HVM64": "ami-00dcd88aa75cfa96a"
+                "HVM64": "ami-04e914639d0cca79a"
             },
             "eu-west-1": {
                 "HVM64": "ami-020a2770a6a61ec2b"
@@ -67,7 +75,7 @@
                     "Fn::Join": [
                         "-",
                         [
-                            "edu-research-ec2-spark-bucket",
+                            {"Fn::Join" : [ "-", [ {"Ref": "CognitoUser"},"edu-research-ec2-spark-bucket" ] ]},
                             {
                                 "Fn::Select": [
                                     0,
@@ -291,13 +299,7 @@
                     }
                 ],
                 "ImageId": {
-                    "Fn::FindInMap": [
-                        "RegionMap",
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        "HVM64"
-                    ]
+                    "Ref": "LatestAmiId"
                 },
                 "Tags": [
                     {
