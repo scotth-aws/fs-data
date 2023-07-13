@@ -1,0 +1,450 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Transform": "AWS::Serverless-2016-10-31",
+    "Description": "AWS ParallelCluster Cluster Custom Resource Provider",
+    "Parameters": {
+        "CustomLambdaRole": {
+            "Description": "Custom role to use for PC Lambda",
+            "Type": "String",
+            "Default": ""
+        },
+        "AdditionalIamPolicies": {
+            "Description": "Comma-delimited list of additional IAM Policies to add to the cluster (only used if CustomLambdaRole isn't provided).",
+            "Type": "CommaDelimitedList",
+            "Default": ""
+        },
+        "CustomBucket": {
+            "Description": "(Debug only) bucket to retrieve S3 artifacts for internal resources.",
+            "Type": "String",
+            "Default": ""
+        }
+    },
+    "Mappings": {
+        "ParallelCluster": {
+            "Constants": {
+                "Version": "3.6.1"
+            }
+        }
+    },
+    "Conditions": {
+        "CustomRoleCondition": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "CustomLambdaRole"
+                        },
+                        ""
+                    ]
+                }
+            ]
+        },
+        "UsePCPolicies": {
+            "Fn::Not": [
+                {
+                    "Condition": "CustomRoleCondition"
+                }
+            ]
+        },
+        "UseAdditionalIamPolicies": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Fn::Join": [
+                                "",
+                                {
+                                    "Ref": "AdditionalIamPolicies"
+                                }
+                            ]
+                        },
+                        ""
+                    ]
+                }
+            ]
+        },
+        "UseCustomBucket": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Ref": "CustomBucket"
+                        },
+                        ""
+                    ]
+                }
+            ]
+        }
+    },
+    "Resources": {
+        "PclusterLayer": {
+            "Type": "AWS::Lambda::LayerVersion",
+            "Properties": {
+                "LayerName": {
+                    "Fn::Sub": [
+                        "PCLayer-${StackIdSuffix}",
+                        {
+                            "StackIdSuffix": {
+                                "Fn::Select": [
+                                    2,
+                                    {
+                                        "Fn::Split": [
+                                            "/",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "Description": "Library which contains aws-parallelcluster python package and dependencies",
+                "Content": {
+                    "S3Bucket": {
+                        "Fn::If": [
+                            "UseCustomBucket",
+                            {
+                                "Ref": "CustomBucket"
+                            },
+                            {
+                                "Fn::Sub": "${AWS::Region}-aws-parallelcluster"
+                            }
+                        ]
+                    },
+                    "S3Key": {
+                        "Fn::Sub": [
+                            "parallelcluster/${Version}/layers/aws-parallelcluster/lambda-layer.zip",
+                            {
+                                "Version": {
+                                    "Fn::FindInMap": [
+                                        "ParallelCluster",
+                                        "Constants",
+                                        "Version"
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                "CompatibleRuntimes": [
+                    "python3.9"
+                ]
+            }
+        },
+        "PclusterPolicies": {
+            "Condition": "UsePCPolicies",
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {
+                    "Fn::Sub": [
+                        "https://${Bucket}.s3.${Region}.${AWS::URLSuffix}/parallelcluster/${Version}/templates/policies/policies.yaml",
+                        {
+                            "Version": {
+                                "Fn::FindInMap": [
+                                    "ParallelCluster",
+                                    "Constants",
+                                    "Version"
+                                ]
+                            },
+                            "Bucket": {
+                                "Fn::If": [
+                                    "UseCustomBucket",
+                                    {
+                                        "Ref": "CustomBucket"
+                                    },
+                                    {
+                                        "Fn::Sub": "${AWS::Region}-aws-parallelcluster"
+                                    }
+                                ]
+                            },
+                            "Region": {
+                                "Ref": "AWS::Region"
+                            }
+                        }
+                    ]
+                },
+                "TimeoutInMinutes": 10,
+                "Parameters": {
+                    "EnableIamAdminAccess": true
+                }
+            }
+        },
+        "PclusterCfnFunctionLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "RetentionInDays": 90,
+                "LogGroupName": {
+                    "Fn::Sub": "/aws/lambda/${PclusterCfnFunction}"
+                }
+            }
+        },
+        "EventsPolicy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "EventsPolicy",
+                            "Effect": "Allow",
+                            "Action": [
+                                "events:PutRule",
+                                "events:DeleteRule",
+                                "events:PutTargets",
+                                "events:RemoveTargets"
+                            ],
+                            "Resource": {
+                                "Fn::Sub": "arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/*"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "S3Policy": {
+            "Type": "AWS::IAM::ManagedPolicy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "S3Policy",
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:*Object",
+                                "s3:ListBucket",
+                                "s3:ListBucketVersions"
+                            ],
+                            "Resource": [
+                                {
+                                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${PclusterCustomResourceBucket}/*"
+                                },
+                                {
+                                    "Fn::Sub": "arn:${AWS::Partition}:s3:::${PclusterCustomResourceBucket}"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "PclusterCustomResourceBucket": {
+            "Type": "AWS::S3::Bucket"
+        },
+        "PclusterLambdaRole": {
+            "Condition": "UsePCPolicies",
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "sts:AssumeRole",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": {
+                    "Fn::Split": [
+                        ",",
+                        {
+                            "Fn::Sub": [
+                                "${LambdaExecutionPolicy},${ClusterPolicy},${DefaultAdminPolicy},${EventsPolicy},${S3Policy}${AdditionalIamPolicies}",
+                                {
+                                    "LambdaExecutionPolicy": {
+                                        "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                                    },
+                                    "ClusterPolicy": {
+                                        "Fn::GetAtt": [
+                                            "PclusterPolicies",
+                                            "Outputs.ParallelClusterClusterPolicy"
+                                        ]
+                                    },
+                                    "DefaultAdminPolicy": {
+                                        "Fn::GetAtt": [
+                                            "PclusterPolicies",
+                                            "Outputs.DefaultParallelClusterIamAdminPolicy"
+                                        ]
+                                    },
+                                    "EventsPolicy": {
+                                        "Ref": "EventsPolicy"
+                                    },
+                                    "S3Policy": {
+                                        "Ref": "S3Policy"
+                                    },
+                                    "AdditionalIamPolicies": {
+                                        "Fn::If": [
+                                            "UseAdditionalIamPolicies",
+                                            {
+                                                "Fn::Sub": [
+                                                    ",${AdditionalPolicies}",
+                                                    {
+                                                        "AdditionalPolicies": {
+                                                            "Fn::Join": [
+                                                                ",",
+                                                                {
+                                                                    "Ref": "AdditionalIamPolicies"
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            ""
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "PclusterCfnFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "parallelcluster:version",
+                        "Value": {
+                            "Fn::FindInMap": [
+                                "ParallelCluster",
+                                "Constants",
+                                "Version"
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "parallelcluster:custom_resource",
+                        "Value": "cluster"
+                    }
+                ],
+                "FunctionName": {
+                    "Fn::Sub": [
+                        "pcluster-cfn-${StackIdSuffix}",
+                        {
+                            "StackIdSuffix": {
+                                "Fn::Select": [
+                                    2,
+                                    {
+                                        "Fn::Split": [
+                                            "/",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "TracingConfig": {
+                    "Mode": "Active"
+                },
+                "MemorySize": 2048,
+                "Timeout": 60,
+                "Code": {
+                    "ZipFile": {
+                        "Fn::Sub": "import boto3\nimport cfnresponse\nimport datetime\nimport json\nimport logging\nimport os\nimport random\nimport re\nimport string\nimport sys\nlogger = logging.getLogger()\nlogger.setLevel(logging.INFO)\n\nimport pcluster.api.controllers.cluster_operations_controller\nimport pcluster.api.errors\nimport pcluster.utils\nfrom pcluster.api import encoder\nfrom pcluster.cli.exceptions import APIOperationException, ParameterException\nfrom pcluster.api.errors import exception_message, NotFoundException\nimport pcluster.lib as pc\n\ncrhelper_path = \"/opt/python/pcluster/resources/custom_resources/custom_resources_code\"\nsys.path.insert(0, crhelper_path)\nfrom crhelper import CfnResource\nhelper = CfnResource()\n\ndef drop_keys(_dict, keys):\n    return {k: v for k, v in _dict.items() if k not in keys}\n\ndef flatten(obj, ret={}, path=\"\"):\n    \"\"\"flatten a nested map using dot-notation for keys.\"\"\"\n    if isinstance(obj, list):  # convert list to dictionary for flattening\n        return flatten({str(i): v for i, v in enumerate(obj)}, ret, path)\n    for k, v in obj.items():\n        if isinstance(v, (dict, list)):  # recurse on complex objects\n            flatten(v, ret, f\"{path}{k}.\")\n        else:  # otherwise add with prefix\n            ret[path + str(k)] = v\n    return ret\n\ndef update_response(data):\n    logger.info(data)\n    # Avoid limit on response object size, user has provided these, so drop them in the response\n    extra_keys = {\"clusterConfiguration\", \"scheduler\", \"tags\"}\n    # create / delete responses have cluster information nested in \"cluster\" key,\n    # flatten that portion while keeping other keys to propagate warnings.\n    if \"cluster\" in data:\n        helper.Data.update(flatten(drop_keys(data[\"cluster\"], extra_keys)))\n\n        validation_messages = json.dumps(data.get(\"validationMessages\", []))\n        validation_messages = \"TRUNCATED:\" + validation_messages[:2048] if len(validation_messages) > 2048 else validation_messages\n        helper.Data[\"validationMessages\"] = validation_messages\n    else:  # without \"cluster\" in the keys, this is a cluster object.\n        helper.Data.update(flatten(drop_keys(data, extra_keys)))\n\ndef serialize(val):\n    return utils.to_iso_timestr(val) if isinstance(val, datetime.date) else val\n\ndef get_stack_tags(stack_name, overrides):\n    cfn = boto3.client('cloudformation')\n    stack_tags = cfn.describe_stacks(StackName=stack_name)[\"Stacks\"][0].get(\"Tags\", [])\n    return list(filter(lambda t: not (t[\"Key\"].startswith(\"aws:\") or t[\"Key\"] in overrides), stack_tags))\n\ndef create_or_update(event):\n    properties = event[\"ResourceProperties\"]\n    full_event = json.loads(boto3.client(\"s3\").get_object(Bucket=\"${PclusterCustomResourceBucket}\",Key=properties.get(\"ClusterName\")+\"/event.json\")[\"Body\"].read())\n    cluster_configuration = full_event[\"ResourceProperties\"][\"ClusterConfiguration\"]\n    request_type = event[\"RequestType\"].upper()\n    helper.Data[\"validationMessages\"] = \"[]\"  # default value\n\n    if properties.get(\"DeletionPolicy\", \"Delete\") not in {\"Retain\", \"Delete\"}:\n        raise ValueError(\"DeletionPolicy must be one of [\\\"Retain\\\", \\\"Delete\\\"].\")\n    if request_type == \"CREATE\" and \"ClusterName\" not in properties:\n        raise ValueError(\"Couldn't find a ClusterName in the properties.\")\n    elif request_type == \"UPDATE\" and event[\"PhysicalResourceId\"] != properties.get(\"ClusterName\"):\n        raise ValueError(\"Cannot update the ClusterName in the properties.\")\n\n    cluster_name = properties[\"ClusterName\"]\n    logger.info(f\"{event['RequestType'].upper()}: {cluster_name}\")\n    physical_resource_id = cluster_name\n\n    try:\n        meta_keys = {\"ServiceToken\", \"DeletionPolicy\"}\n        kwargs = {**{pcluster.utils.to_snake_case(k): serialize(v) for k, v in drop_keys(properties, meta_keys).items()}, \"wait\": False}\n        kwargs[\"cluster_configuration\"] = cluster_configuration\n        resource_tags = [{\"Key\": \"parallelcluster:custom_resource\", \"Value\": \"cluster\"}]\n        config_tags = cluster_configuration.get(\"Tags\", [])\n        stack_tags = get_stack_tags(event['StackId'], {t[\"Key\"] for t in config_tags})\n        kwargs[\"cluster_configuration\"][\"Tags\"] = stack_tags + config_tags + resource_tags\n        func = {\"CREATE\": pc.create_cluster, \"UPDATE\": pc.update_cluster}[request_type]\n        update_response(func(**kwargs))\n    except (APIOperationException, ParameterException, TypeError)  as e:\n        logger.info(str(e))\n        raise ValueError(str(e))\n    except Exception as e:\n        message = pcluster.api.errors.exception_message(e)\n        # StatusReason is truncated, so skip changeset in output, still logged below\n        block_list = {\"change_set\"}\n        message_data = drop_keys(message.to_dict(), block_list)\n        logger.info(message_data)\n\n        # sort more critical errors last\n        if \"configuration_validation_errors\" in message_data and message_data[\"configuration_validation_errors\"]:\n            order = {k: i for i, k in enumerate([\"INFO\", \"WARNING\", \"ERROR\"])}\n            message_data[\"configuration_validation_errors\"].sort(key=lambda e: order[e[\"level\"]])\n\n        str_msg = encoder.JSONEncoder().encode(message_data)\n        if not re.search(r\"No changes found\", str_msg):\n            logger.info(encoder.JSONEncoder().encode(message))\n            raise ValueError(str_msg)\n        logger.info(f\"No changes found to update: {cluster_name}\")\n\n    return physical_resource_id\n\n@helper.create\ndef create(event, context):\n    return create_or_update(event)\n\n@helper.update\ndef update(event, context):\n    return create_or_update(event)\n\n@helper.delete\ndef delete(event, context):\n    properties = event[\"ResourceProperties\"]\n    cluster_name = properties.get(\"ClusterName\")\n\n    boto3.resource('s3').Bucket(\"${PclusterCustomResourceBucket}\").objects.filter(Prefix=f\"{cluster_name}/\").delete()\n\n    deletion_policy = properties.get(\"DeletionPolicy\", \"Delete\")\n    if deletion_policy not in {\"Retain\", \"Delete\"}:\n        raise ValueError(\"DeleetionPolicy must be one of [\\\"Retain\\\", \\\"Delete\\\"].\")\n    if deletion_policy == \"Retain\":\n        return cluster_name\n\n    logger.info(f\"Deleting: {cluster_name}\")\n    try:\n        update_response(pc.delete_cluster(cluster_name=cluster_name))\n    except (ParameterException, NotFoundException): # cluster deleted or invalid name -- ignore here.\n        pass\n    except Exception as e:\n        message = exception_message(e)\n        raise ValueError(encoder.JSONEncoder().encode(message))\n\n# Polling functionality for async CUD operations\n\ndef poll(event):\n    log_group = os.getenv(\"AWS_LAMBDA_LOG_GROUP_NAME\")\n    cluster_name = event[\"ResourceProperties\"].get(\"ClusterName\")\n    try:\n        cluster = pc.describe_cluster(cluster_name=cluster_name)\n        status = cluster.get(\"clusterStatus\")\n\n        if status in {\"CREATE_COMPLETE\", \"UPDATE_COMPLETE\"}:\n            update_response(cluster)\n            return cluster_name\n        elif status in {\"CREATE_FAILED\", \"UPDATE_FAILED\", \"DELETE_FAILED\"}:\n            reasons = \",\".join(f[\"failureCode\"] for f in cluster.get(\"failures\", []))\n            raise ValueError(f\"{cluster_name}: {reasons} (LogGroup: {log_group})\")\n\n    # If create fails and we try to roll-back (e.g. delete),\n    # gracefully handle missing cluster. on the delete pathway, the\n    # only invalid parameter can be the name\n    except (ParameterException, NotFoundException):\n        if event[\"RequestType\"].upper() == \"DELETE\":\n            # Returning a value here signifies that the delete is completed and we can stop polling\n            # not returning a value here causes cfn resource helper to keep polling.\n            return cluster_name\n        raise ValueError(f\"{cluster_name} failed {event['RequestType'].upper()}. See LogGroup: {log_group}\")\n\n@helper.poll_create\ndef poll_create(event, context):\n    return poll(event)\n\n@helper.poll_update\ndef poll_update(event, context):\n    return poll(event)\n\n@helper.poll_delete\ndef poll_delete(event, context):\n    return poll(event)\n\ndef handler(event, context):\n    try:\n        logger.info(\"Beginning of Pcluster custom resource Lambda function. Printing full event...\")\n        logger.info(event)\n        if event[\"ResourceProperties\"].get(\"ClusterConfiguration\") or (event.get(\"OldResourceProperties\") and event[\"OldResourceProperties\"].get(\"ClusterConfiguration\")):\n            boto3.client('s3').put_object(\n                Body=json.dumps(event), \n                Bucket=\"${PclusterCustomResourceBucket}\", \n                Key=event[\"ResourceProperties\"].get(\"ClusterName\")+\"/event.json\"\n            )\n            event[\"ResourceProperties\"].pop(\"ClusterConfiguration\", None)\n            event.get(\"OldResourceProperties\", {}).pop(\"ClusterConfiguration\", None)\n    except Exception as exception:\n        cfnresponse.send(event, context, cfnresponse.FAILED, {}, event.get('PhysicalResourceId', 'PclusterClusterCustomResource'), str(exception))\n\n    helper(event, context)\n"
+                    }
+                },
+                "Handler": "index.handler",
+                "Runtime": "python3.9",
+                "Role": {
+                    "Fn::If": [
+                        "CustomRoleCondition",
+                        {
+                            "Ref": "CustomLambdaRole"
+                        },
+                        {
+                            "Fn::GetAtt": [
+                                "PclusterLambdaRole",
+                                "Arn"
+                            ]
+                        }
+                    ]
+                },
+                "Layers": [
+                    {
+                        "Ref": "PclusterLayer"
+                    }
+                ]
+            }
+        },
+        "CleanupS3bucketFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Timeout": 60,
+                "Code": {
+                    "ZipFile": {
+                        "Fn::Sub": "import boto3\nimport cfnresponse\nimport logging\nimport sys\nfrom botocore.config import Config\nlogger = logging.getLogger()\nlogger.setLevel(logging.INFO)\n\ndef _delete_s3_artifacts(event):\n    \"\"\"\n    Delete artifacts under the directory that is passed in.\n\n    It exits gracefully if directory does not exist.\n    :param bucket_name: bucket containing cluster artifacts\n    \"\"\"\n    bucket_name = event[\"ResourceProperties\"][\"S3Bucket\"]\n    try:\n        if bucket_name != \"NONE\":\n            bucket = boto3.resource(\"s3\", config=Config(retries={\"max_attempts\": 60})).Bucket(bucket_name)\n            logger.info(\"Cluster S3 artifact in %s deletion: STARTED\", bucket_name)\n            bucket.objects.all().delete()\n            bucket.object_versions.delete()\n            logger.info(\"Cluster S3 artifact in %s deletion: COMPLETED\", bucket_name)\n    except boto3.client(\"s3\").exceptions.NoSuchBucket as ex:\n        logger.warning(\"S3 bucket %s not found. Bucket was probably manually deleted.\", bucket_name)\n        logger.warning(ex, exc_info=True)\n    except Exception as e:\n        logger.error(\n            \"Failed when deleting cluster S3 artifact in %s with error %s\", bucket_name, e\n        )\n        raise\n\ndef handler(event, context):\n    try:\n        if event[\"RequestType\"] == \"Delete\":\n            _delete_s3_artifacts(event)\n        response_status = cfnresponse.SUCCESS\n        reason = \"\"\n    except Exception as e:\n        response_status = cfnresponse.FAILED\n        reason = str(e)\n    cfnresponse.send(event, context, response_status, {}, event.get('PhysicalResourceId', 'CleanupS3bucketCustomResource'), reason)\n"
+                    }
+                },
+                "Handler": "index.handler",
+                "Runtime": "python3.9",
+                "Role": {
+                    "Fn::If": [
+                        "CustomRoleCondition",
+                        {
+                            "Ref": "CustomLambdaRole"
+                        },
+                        {
+                            "Fn::GetAtt": [
+                                "PclusterLambdaRole",
+                                "Arn"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "CleanupS3bucketCustomResource": {
+            "DeletionPolicy": "Delete",
+            "Properties": {
+                "S3Bucket": {
+                    "Ref": "PclusterCustomResourceBucket"
+                },
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "CleanupS3bucketFunction",
+                        "Arn"
+                    ]
+                }
+            },
+            "Type": "AWS::CloudFormation::CustomResource",
+            "UpdateReplacePolicy": "Delete"
+        }
+    },
+    "Outputs": {
+        "ServiceToken": {
+            "Description": "Lambda for managing PCluster Resources",
+            "Value": {
+                "Fn::GetAtt": [
+                    "PclusterCfnFunction",
+                    "Arn"
+                ]
+            }
+        },
+        "LogGroupArn": {
+            "Description": "ARN of LogGroup for Lambda logging",
+            "Value": {
+                "Fn::GetAtt": [
+                    "PclusterCfnFunctionLogGroup",
+                    "Arn"
+                ]
+            }
+        },
+        "LambdaLayerArn": {
+            "Description": "ARN for the ParallelCluster Lambda Layer",
+            "Value": {
+                "Ref": "PclusterLayer"
+            }
+        }
+    }
+}

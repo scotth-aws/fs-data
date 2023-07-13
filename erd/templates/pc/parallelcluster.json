@@ -1,0 +1,301 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS ParallelCluster CloudFormation Cluster",
+    "Parameters": {
+        "CognitoUser": {
+            "Description": "CognitoUser",
+            "Type": "String",
+            "Default": "scotth"
+        },
+        "InstanceType": {
+            "Description": "Instance Type",
+            "Type": "String",
+            "Default": "t2.medium"
+        },
+        "KeyName": {
+            "Description": "Key Pair Name",
+            "Type": "String",
+            "Default": "fs-key-pair-us-west-2"
+        },
+        "AvailabilityZone": {
+            "Description": "Availability zone where instances will be launched",
+            "Type": "AWS::EC2::AvailabilityZone::Name",
+            "Default": "us-west-2a",
+            "AllowedPattern": ".+"
+        }
+    },
+    "Mappings": {
+        "ParallelCluster": {
+            "Constants": {
+                "Version": "3.6.1",
+                "Bucket": ""
+            }
+        }
+    },
+    "Conditions": {
+        "UseCustomBucket": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        {
+                            "Fn::FindInMap": [
+                                "ParallelCluster",
+                                "Constants",
+                                "Bucket"
+                            ]
+                        },
+                        ""
+                    ]
+                }
+            ]
+        },
+        "GovCloud": {
+            "Fn::Equals": [
+                {
+                    "Ref": "AWS::Partition"
+                },
+                "aws-us-gov"
+            ]
+        },
+        "China": {
+            "Fn::Equals": [
+                {
+                    "Ref": "AWS::Partition"
+                },
+                "aws-cn"
+            ]
+        }
+    },
+    "Resources": {
+        "PclusterClusterProvider": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "Tags": [{"Key": "name", "Value":  {"Fn::Join" : [ "-", [ {"Ref": "CognitoUser"},"parallel-cluster-stack" ] ]}}],
+                "Parameters": {
+                    "CustomBucket": {
+                        "Fn::If": [
+                            "UseCustomBucket",
+                            {
+                                "Fn::FindInMap": [
+                                    "ParallelCluster",
+                                    "Constants",
+                                    "Bucket"
+                                ]
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
+                    },
+                    "AdditionalIamPolicies": {
+                        "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+                    }
+                },
+                "TemplateURL": {
+                    "Fn::Sub": [
+                        "https://${Bucket}.s3.${AWS::Region}.${AWS::URLSuffix}/parallelcluster/${Version}/templates/custom_resource/cluster.yaml",
+                        {
+                            "Version": {
+                                "Fn::FindInMap": [
+                                    "ParallelCluster",
+                                    "Constants",
+                                    "Version"
+                                ]
+                            },
+                            "Bucket": {
+                                "Fn::If": [
+                                    "UseCustomBucket",
+                                    {
+                                        "Fn::FindInMap": [
+                                            "ParallelCluster",
+                                            "Constants",
+                                            "Bucket"
+                                        ]
+                                    },
+                                    {
+                                        "Fn::Sub": "${AWS::Region}-aws-parallelcluster"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "PclusterVpc": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "Tags": [{"Key": "name", "Value":  {"Fn::Join" : [ "-", [ {"Ref": "CognitoUser"},"parallel-cluster-vpc" ] ]}}],
+                "Parameters": {
+                    "PublicCIDR": "10.0.0.0/24",
+                    "PrivateCIDR": "10.0.16.0/20",
+                    "AvailabilityZone": {
+                        "Ref": "AvailabilityZone"
+                    }
+                },
+                "TemplateURL": {
+                    "Fn::Sub": [
+                        "https://${Bucket}.s3.${AWS::Region}.${AWS::URLSuffix}/parallelcluster/${Version}/templates/networking/public-private-${Version}.cfn.json",
+                        {
+                            "Version": {
+                                "Fn::FindInMap": [
+                                    "ParallelCluster",
+                                    "Constants",
+                                    "Version"
+                                ]
+                            },
+                            "Bucket": {
+                                "Fn::If": [
+                                    "UseCustomBucket",
+                                    {
+                                        "Fn::FindInMap": [
+                                            "ParallelCluster",
+                                            "Constants",
+                                            "Bucket"
+                                        ]
+                                    },
+                                    {
+                                        "Fn::Sub": "${AWS::Region}-aws-parallelcluster"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "PclusterCluster": {
+            "Type": "Custom::PclusterCluster",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "PclusterClusterProvider",
+                        "Outputs.ServiceToken"
+                    ]
+                },
+                "ClusterName": {
+                    "Fn::Join" : [ "-", [ {"Ref": "CognitoUser"}, "parallel-cluster" ] ]
+                   
+                },
+                "ClusterConfiguration": {
+                    "DevSettings": {
+                        "Fn::If": [
+                            "UseCustomBucket",
+                            {
+                                "AmiSearchFilters": {
+                                    "Owner": "self"
+                                }
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
+                    },
+                    "Image": {
+                        "Os": "alinux2"
+                    },
+                    "HeadNode": {
+                        "InstanceType": {"Ref": "InstanceType"},
+                        "Networking": {
+                            "SubnetId": {
+                                "Fn::GetAtt": [
+                                    "PclusterVpc",
+                                    "Outputs.PublicSubnetId"
+                                ]
+                            }
+                        },
+                        "Ssh": {
+                            "KeyName": {
+                                "Ref": "KeyName"
+                            }
+                        },
+                        "Iam": {
+                            "AdditionalIamPolicies": [
+                                {
+                                    "Policy": {
+                                        "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "Scheduling": {
+                        "Scheduler": "slurm",
+                        "SlurmQueues": [
+                            {
+                                "Name": "queue0",
+                                "ComputeResources": [
+                                    {
+                                        "Name": "queue0-cr0",
+                                        "InstanceType": "t2.medium"
+                                    }
+                                ],
+                                "Networking": {
+                                    "SubnetIds": [
+                                        {
+                                            "Fn::GetAtt": [
+                                                "PclusterVpc",
+                                                "Outputs.PrivateSubnetId"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "Outputs": {
+        "HeadNodeIp": {
+            "Description": "The Public IP address of the HeadNode",
+            "Value": {
+                "Fn::GetAtt": [
+                    "PclusterCluster",
+                    "headNode.publicIpAddress"
+                ]
+            }
+        },
+        "SystemManagerUrl": {
+            "Description": "URL to access the HeadNode via SystemManager",
+            "Value": {
+                "Fn::Sub": [
+                    "https://${ConsoleDomain}/systems-manager/session-manager/${InstanceId}?region=${AWS::Region}",
+                    {
+                        "ConsoleDomain": {
+                            "Fn::If": [
+                                "GovCloud",
+                                "console.amazonaws-us-gov.com",
+                                {
+                                    "Fn::If": [
+                                        "China",
+                                        "console.amazonaws.cn",
+                                        {
+                                            "Fn::Sub": "${AWS::Region}.console.aws.amazon.com"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "InstanceId": {
+                            "Fn::GetAtt": [
+                                "PclusterCluster",
+                                "headNode.instanceId"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "ValidationMessages": {
+            "Description": "Any warnings from cluster create or update operations.",
+            "Value": {
+                "Fn::GetAtt": [
+                    "PclusterCluster",
+                    "validationMessages"
+                ]
+            }
+        }
+    }
+}
